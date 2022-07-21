@@ -16,6 +16,40 @@ mstrmojo.plugins.SampleBarChart.SampleBarChartDropZones = mstrmojo.declare(
   {
     scriptClass: "mstrmojo.plugins.SampleBarChart.SampleBarChartDropZones",
     cssClass: "samplebarchart-dropzones",
+    getExtraUnitMenuItems: function W(x, w, AB, AA) {
+      var z = this, 
+        AC = this.id;
+      
+      x.addSeparator();
+      this.buildThresholdMenuOptions(x, AA, false);
+
+      if (this.shouldShowDisplayFormsMenu(AB)) {
+        x.addEditorMenuItem(mstrmojo.desc(11908, "Display Attribute Forms"), AC, this.getDisplayFormsMenu, AB);
+      }
+      if (this.showNumberFormat(AB)) {
+        x.addEditorMenuItem(mstrmojo.desc(13237, "Number Format"), AC, this.getNumberFormatEditorCfg, AA);
+      }
+      this.visModel.xtab._gatherData=true;
+    },
+    buildThresholdMenuOptions: function buildThresholdMenuOptions(cfg, itemContext, isColorBy) {
+      mstrmojo.all[this.hostId].model.buildThresholdMenuOptions(cfg, itemContext, false, false);
+    },
+    showNumberFormat: function N(AL) {
+      if(AL.hasOwnProperty("fs")){
+        return false;
+      }
+      return true;
+    },
+    shouldShowDisplayFormsMenu:function N(AL){
+    //check if it is n attribute
+      if(AL.hasOwnProperty("fs")){
+        return true;
+      }
+      return false;
+    },
+    showQuickSubtotals:function N(){
+      return true;
+    },
     getCustomDropZones() {
       return [
         {

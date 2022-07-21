@@ -36,14 +36,21 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
     },
     plot(appliedProperties = null) {
       const host = this;
-      let data = this.getDataStructure();
+      let properties = null;
+      if (appliedProperties) {
+        properties = adjustProperties(appliedProperties, host);
+      } else {
+        const savedProperties = JSON.parse(host.getProperty("unifiedProperty"));
+        properties = adjustProperties(savedProperties, host);
+      }
+      let data = this.getDataStructure(properties);
       this.displayBarChart(d3, data);
     },
     /**
      * Extracts the data used in the visualization and constructs the data structure
      * @returns 
      */
-     getDataStructure(){
+     getDataStructure(properties){
       var data = [];
       let rawData = this.dataInterface.getRawData(ENUM_RAW_DATA_FORMAT.ROWS_ADV, {hasThreshold:true});
       for(let att =0; att<rawData.length; att++){
@@ -51,7 +58,7 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
 					data.push({
 						attribute : row.headers[0].name,
 						metric_value : (row.values[0].rv !== "") ? Number(row.values[0].rv) : 0,
-						color: (row.values[0].threshold) ? row.values[0].threshold.fillColor : "#5BA1C1",  
+						color: (row.values[0].threshold) ? row.values[0].threshold.fillColor : properties.barBackgroundcolor,  
 						tooltipValue: (row.values[0].v !== "") ? Number(row.values[0].v) : 0
 					});
 			}	
