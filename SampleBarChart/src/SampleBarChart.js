@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+import cloud from 'd3-cloud';
 import { adjustProperties } from "./properties/adjustProperties";
 import { getDefaultProperties } from "./properties/getDefaultProperties";
 import { enhanceHost } from "./utils/enhanceHost";
@@ -11,7 +13,6 @@ const { ENUM_RAW_DATA_FORMAT } = mstrmojo.models.template.DataInterface;
 
 mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
   mstrmojo.CustomVisBase,
-  null,
   {
     scriptClass: "mstrmojo.plugins.SampleBarChart.SampleBarChart",
     cssClass: "samplebarchart",
@@ -35,30 +36,22 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
     },
     plot(appliedProperties = null) {
       const host = this;
-
-      let properties;
-      if (appliedProperties) {
-        properties = adjustProperties(appliedProperties, host);
-      } else {
-        const savedProperties = JSON.parse(host.getProperty("unifiedProperty"));
-        properties = adjustProperties(savedProperties, host);
-      }
-      let data = getData();
-      displayBarChart(data);
+      let data = this.getDataStructure();
+      this.displayBarChart(d3, data);
     },
     /**
      * Extracts the data used in the visualization and constructs the data structure
      * @returns 
      */
-    getData(){
-      let rawData = this.dataInterface.geRawData(ENUM_RAW_DATA_FORMAT.ROWS_ADV, {hasThreshold:true});
+     getDataStructure(){
+      var data = [];
+      let rawData = this.dataInterface.getRawData(ENUM_RAW_DATA_FORMAT.ROWS_ADV, {hasThreshold:true});
       for(let att =0; att<rawData.length; att++){
-				let row = widgetData[att];
+				let row = rawData[att];
 					data.push({
-						attributeSelector: row.attributeSelector,
-						attribute : row.name,
+						attribute : row.headers[0].name,
 						metric_value : (row.values[0].rv !== "") ? Number(row.values[0].rv) : 0,
-						color: (rowThresholds.values[0].threshold) ? rowThresholds.values[0].threshold.fillColor : colorArray[0],  
+						color: (row.values[0].threshold) ? row.values[0].threshold.fillColor : "#5BA1C1",  
 						tooltipValue: (row.values[0].v !== "") ? Number(row.values[0].v) : 0
 					});
 			}	
@@ -68,10 +61,9 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
      * Draws the bar chart in the visualization container.
      * @param {*} data 
      */
-    displayBarChart(data){
-
+    displayBarChart(d3, data){
       const visualizationContainer = this;
-      const position = setPositionParameters(me, data);
+      const position = this.setPositionParameters(visualizationContainer,d3, data);
 
       var chart = d3.select(visualizationContainer.domNode).append("svg")
       .attr("class", "BasicVisualization")
@@ -79,8 +71,8 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
       .attr("height", visualizationContainer.height)
       .append("g").attr("transform", "translate(" + position.margin.left + "," + position.margin.top + ")");
 
-      drawBars(chart, data, position, visualizationContainer);
-			drawAxis(chart, data, position, visualizationContainer);
+      this.drawBars(chart, data, position, visualizationContainer);
+			this.drawAxis(chart, data, position, visualizationContainer);
 
     },
     /**
@@ -107,7 +99,7 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
           })
           // bar starting point on x axis
           .attr("x", function(d) {
-            return x(d.attribute) + pos + (x.bandwidth() - barWidth)/2;
+            return x(d.attribute) + (x.bandwidth() - barWidth)/2;
           })
           // bar starting point of the y axis
           .attr("y", function(d) { 
@@ -126,7 +118,7 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
      * @param {*} me 
      */
     drawAxis(chart, data, position, me){
-
+      debugger;
       var x = position.x, y = position.y;
       
       var xAxis = d3.axisBottom(x)
@@ -189,7 +181,7 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
         .attr("stroke", "none");
     
     
-      drawTicks(data, y, chart, x);
+      this.drawTicks(data, y, chart, x);
     
     },
     /**
@@ -202,7 +194,7 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
     drawTicks(data, y, chart, x) {
 
       var ticks = [0];
-      var highestValue = findMaximum(data);
+      var highestValue = this.findMaximum(data);
       for (var index = 0; index < highestValue; index += 500000) {
         ticks.push(y(index));
       }
@@ -226,21 +218,24 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
       });
       return highestValue;
     },
-    setPositionParameters(me, data){
-      let highestValue = findMaximum(data);
-       
+    setPositionParameters(me,d3, data){
+      let highestValue = this.findMaximum(data);
+      var margin = {top : 10, right : 10, bottom : 30, left : 50},
+      width = parseInt(me.width, 10) - margin.left - margin.right,
+      height = parseInt(me.height, 10) - margin.top - margin.bottom;
       let x = d3.scaleBand().rangeRound([0,width]).padding(0.05, 0.5)
               .domain(data.map(function(d){
                 return d.attribute;
               }));
       
       let y = d3.scaleLinear().range([height, 0])
-              .domain([0, highestValue[1]]);
+              .domain([0, highestValue]);
 
       return {
-        x : x,
-        y : y
+        margin,
+        x,
+        y
       };
     },
-}());
+});
 
