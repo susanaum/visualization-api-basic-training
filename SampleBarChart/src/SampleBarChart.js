@@ -9,15 +9,20 @@ mstrmojo.requiresDescsWPrefix("SampleBarChart.", 10, 11, 12, 13);
 // mojo module
 mstrmojo.requiresCls("mstrmojo.CustomVisBase");
 
+const { GraphicModel } = mstrmojo.customviz;
 const { ENUM_RAW_DATA_FORMAT } = mstrmojo.models.template.DataInterface;
 
 mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
   mstrmojo.CustomVisBase,
+  null,
   {
     scriptClass: "mstrmojo.plugins.SampleBarChart.SampleBarChart",
     cssClass: "samplebarchart",
-    errorMessage:"Either there is not enough data to display the visualization or the visualization configuration is incomplete.",
-    errorDetails:"This visualization requires one or more attributes and one metric.",
+    data:[],
+    errorMessage:
+      "Either there is not enough data to display the visualization or the visualization configuration is incomplete.",
+    errorDetails:
+      "This visualization requires one or more attributes and one metric.",
     useRichTooltip: false,
     reuseDOMNode: false,
     draggable: false,
@@ -28,49 +33,40 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
       const defaultPropertyValues = getDefaultProperties();
       this.setDefaultPropertyValues(defaultPropertyValues);
     },
-
     clearDomNode() {
       const host = this;
       const { domNode } = host;
       domNode.innerHTML = "";
     },
     plot(appliedProperties = null) {
-      const host = this;
-      let properties = null;
-      if (appliedProperties) {
-        properties = adjustProperties(appliedProperties, host);
-      } else {
-        const savedProperties = JSON.parse(host.getProperty("unifiedProperty"));
-        properties = adjustProperties(savedProperties, host);
+      const visualizationContainer = this;
+      try{
+        // if(this.data.length==0)
+          this.data = this.retrieveData(visualizationContainer);
+        this.renderBarChart(this.data, visualizationContainer);
+      }catch(e){
+        console.log(e)
       }
-      let data = this.getDataStructure(properties);
-      this.displayBarChart(d3, data);
     },
-    /**
-     * Extracts the data used in the visualization and constructs the data structure
-     * @returns 
-     */
-     getDataStructure(properties){
-      var data = [];
-      let rawData = this.dataInterface.getRawData(ENUM_RAW_DATA_FORMAT.ROWS_ADV, {hasThreshold:true});
+
+    retrieveData(visualizationContainer){
+      //this.dataInterface.getRawData
+      let data = [];
+      let rawData = visualizationContainer.dataInterface.getRawData(ENUM_RAW_DATA_FORMAT.ROWS_ADV, {hasThreshold:true});
       for(let att =0; att<rawData.length; att++){
 				let row = rawData[att];
 					data.push({
 						attribute : row.headers[0].name,
 						metric_value : (row.values[0].rv !== "") ? Number(row.values[0].rv) : 0,
-						color: (row.values[0].threshold) ? row.values[0].threshold.fillColor : properties.barBackgroundcolor,  
+						color: (row.values[0].threshold) ? row.values[0].threshold.fillColor : "#5BA1C1",  
 						tooltipValue: (row.values[0].v !== "") ? Number(row.values[0].v) : 0
 					});
 			}	
 			return data;
     }, 
-    /**
-     * Draws the bar chart in the visualization container.
-     * @param {*} data 
-     */
-    displayBarChart(d3, data){
-      const visualizationContainer = this;
-      const position = this.setPositionParameters(visualizationContainer,d3, data);
+    renderBarChart(data, visualizationContainer){
+
+      let position = this.setPositionParameters(visualizationContainer, data);
 
       var chart = d3.select(visualizationContainer.domNode).append("svg")
       .attr("class", "BasicVisualization")
@@ -80,50 +76,7 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
 
       this.drawBars(chart, data, position, visualizationContainer);
 			this.drawAxis(chart, data, position, visualizationContainer);
-
     },
-    /**
-     * Draw bars of the bar chart
-     * @param {*} chart 
-     * @param {*} data 
-     * @param {*} parameters 
-     * @param {*} me 
-     */
-    drawBars(chart, data, parameters, me){
-        var x = parameters.x, y = parameters.y;
-        var barWidth = x.bandwidth()/4;
-        
-        chart.selectAll(".rect")
-          .data(data)
-          .enter()
-          .append("rect")
-          // bar width
-          .attr("width", function (d){
-            return barWidth;
-          })
-          .attr("height", function(d) { 
-            return Math.abs(y(0) - y(d.metric_value));
-          })
-          // bar starting point on x axis
-          .attr("x", function(d) {
-            return x(d.attribute) + (x.bandwidth() - barWidth)/2;
-          })
-          // bar starting point of the y axis
-          .attr("y", function(d) { 
-            return Math.min(y(0), y(d.metric_value));
-          })
-          // bar color
-          .style("fill", function(d) { 
-            return d.color;
-          });			
-    },
-    /**
-     * Draw 
-     * @param {*} chart 
-     * @param {*} data 
-     * @param {*} position 
-     * @param {*} me 
-     */
     drawAxis(chart, data, position, me){
       debugger;
       var x = position.x, y = position.y;
@@ -191,13 +144,34 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
       this.drawTicks(data, y, chart, x);
     
     },
-    /**
-     * Draw tickes in the bar chart axis
-     * @param {*} data 
-     * @param {*} y 
-     * @param {*} chart 
-     * @param {*} x 
-     */
+    drawBars(chart, data, parameters, me){
+      var x = parameters.x, y = parameters.y;
+      var barWidth = x.bandwidth()/4;
+      
+      chart.selectAll(".rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        // bar width
+        .attr("width", function (d){
+          return barWidth;
+        })
+        .attr("height", function(d) { 
+          return Math.abs(y(0) - y(d.metric_value));
+        })
+        // bar starting point on x axis
+        .attr("x", function(d) {
+          return x(d.attribute) + (x.bandwidth() - barWidth)/2;
+        })
+        // bar starting point of the y axis
+        .attr("y", function(d) { 
+          return Math.min(y(0), y(d.metric_value));
+        })
+        // bar color
+        .style("fill", function(d) { 
+          return d.color;
+        });			
+  },
     drawTicks(data, y, chart, x) {
 
       var ticks = [0];
@@ -225,11 +199,11 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
       });
       return highestValue;
     },
-    setPositionParameters(me,d3, data){
-      let highestValue = this.findMaximum(data);
+    setPositionParameters(visualizationContainer, data){
+      let highestValue = visualizationContainer.findMaximum(data);
       var margin = {top : 10, right : 10, bottom : 30, left : 50},
-      width = parseInt(me.width, 10) - margin.left - margin.right,
-      height = parseInt(me.height, 10) - margin.top - margin.bottom;
+      width = parseInt(visualizationContainer.width, 10) - margin.left - margin.right,
+      height = parseInt(visualizationContainer.height, 10) - margin.top - margin.bottom;
       let x = d3.scaleBand().rangeRound([0,width]).padding(0.05, 0.5)
               .domain(data.map(function(d){
                 return d.attribute;
@@ -243,6 +217,6 @@ mstrmojo.plugins.SampleBarChart.SampleBarChart = mstrmojo.declare(
         x,
         y
       };
-    },
-});
-
+    }
+  }
+);

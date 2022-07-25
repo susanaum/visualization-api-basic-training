@@ -12,7 +12,7 @@ const apply = (host, propertyKey, value) => {
   let unifiedProperty = JSON.parse(host.getProperty("unifiedProperty"));
 
   const notRefresh = {
-    callback: () => { host.refresh();},
+    callback: () => {},
   };
 
   let useDefaultPropertySave = true;
