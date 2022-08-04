@@ -1,0 +1,27 @@
+{
+  "name": "samplebarchart",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "mstr-viz-build development",
+    "build": "mstr-viz-build",
+    "build:local": "mstr-viz-build local",
+    "build:web-inf": "mstr-viz-build web-inf"
+  },
+  "engines": {
+    "node": ">=8"
+  },
+  "dependencies": {
+    "d3": "^5.9.7", 
+    "d3-cloud": "^1.2.5"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.2",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.18.2",
+    "@babel/core": "^7.13.1",
+    "@babel/preset-env": "^7.13.5",
+    "babel-loader": "^8.2.2",
+    "core-js": "^3.12.1"
+  }
+}

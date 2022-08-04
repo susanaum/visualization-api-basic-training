@@ -1,0 +1,25 @@
+@format_panel_icons: "./images/format_panel_icons.svg";
+
+.samplebarchart {
+  overflow-y: scroll;
+
+  .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+
+    .attributeContainer,
+    .metricContainer {
+      text-align: center;
+      width: 50%;
+      border: 1px solid white;
+      padding: 10px;
+    }
+  }
+}
+
+div.segment-control-icons._samplebarchart {
+  background: url(@format_panel_icons) no-repeat scroll 0 -150px;
+  height: 22px;
+  width: 22px;
+}
